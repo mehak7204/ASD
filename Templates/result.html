@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Autism Prediction Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #f4f6f9;
+      color: #333;
+      line-height: 1.6;
+    }
+
+    .dashboard {
+      max-width: 1400px;
+      margin: auto;
+      padding: 2rem;
+    }
+
+    h1 {
+      text-align: center;
+      color: #1e1e2f;
+      margin-bottom: 2.5rem;
+      font-size: 2.5rem;
+      font-weight: 700;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .card {
+      background-color: #ffffff;
+      border-radius: 12px;
+      padding: 1.5rem 1rem;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.05);
+      text-align: center;
+      transition: transform 0.2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      margin-bottom: 0.5rem;
+      color: #666;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .highlight {
+      font-size: 2rem;
+      font-weight: bold;
+      color: #007BFF;
+    }
+
+    .charts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+      gap: 2rem;
+      margin-bottom: 3rem;
+    }
+
+    .chart-container {
+      background-color: #ffffff;
+      padding: 1rem 1.5rem;
+      border-radius: 12px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+
+    canvas {
+      width: 100% !important;
+      height: 350px !important;
+    }
+
+    .report-section {
+      background: #fff;
+      padding: 2rem 2.5rem;
+      border-radius: 12px;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
+      margin-bottom: 2rem;
+      line-height: 1.8;
+    }
+
+    .report-section h2 {
+      font-size: 1.5rem;
+      margin-top: 1.5rem;
+      margin-bottom: 1rem;
+      color: #444;
+    }
+
+    .report-section p {
+      font-size: 1rem;
+      margin-bottom: 1rem;
+      color: #555;
+    }
+
+    .back {
+      display: inline-block;
+      text-align: center;
+      font-weight: 600;
+      text-decoration: none;
+      color: #007BFF;
+      font-size: 1.1rem;
+      margin: 1.5rem auto 0;
+      padding: 0.5rem 1rem;
+      border: 2px solid #007BFF;
+      border-radius: 6px;
+      transition: background-color 0.3s, color 0.3s;
+    }
+
+    .back:hover {
+      background-color: #007BFF;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="dashboard">
+    <h1>🧠 Autism Prediction Dashboard</h1>
+
+    <!-- Summary Cards -->
+    <div class="cards">
+      <div class="card">
+        <h2>Prediction</h2>
+        <p class="highlight">{{ prediction }}</p>
+      </div>
+      <div class="card">
+        <h2>Confidence Score</h2>
+        <p class="highlight">{{ confidence }}%</p>
+      </div>
+      <div class="card">
+        <h2>Model Accuracy</h2>
+        <p class="highlight">{{ accuracy }}%</p>
+      </div>
+      <div class="card">
+        <h2>Total Score</h2>
+        <p class="highlight">{{ total_score }} / 10</p>
+      </div>
+      <div class="card">
+        <h2>Risk Level</h2>
+        <p class="highlight">{{ risk_level }}</p>
+      </div>
+    </div>
+
+    <!-- Visualizations -->
+    <div class="charts">
+      <div class="chart-container"><canvas id="radarChart"></canvas></div>
+      <div class="chart-container"><canvas id="barChart"></canvas></div>
+      <div class="chart-container"><canvas id="confidencePie"></canvas></div>
+      <div class="chart-container"><canvas id="lineChart"></canvas></div>
+      <div class="chart-container"><canvas id="polarChart"></canvas></div>
+      <div class="chart-container"><canvas id="gaugeChart"></canvas></div>
+      <div class="chart-container"><canvas id="categoryBarChart"></canvas></div>
+    </div>
+
+    <!-- Report Section -->
+    <div class="report-section">
+      <h2>📝 Prediction Report</h2>
+      <p>
+        Based on your responses to the A1–A10 questionnaire, the model has predicted:
+        <strong>{{ prediction }}</strong> with a confidence score of <strong>{{ confidence }}%</strong>.
+      </p>
+
+      <h2>🔍 Insightful Analysis</h2>
+      <p>
+        Based on the scoring: <strong>{{ risk_level }}</strong> was detected with a total of
+        <strong>{{ total_score }}</strong> out of 10.
+      </p>
+      <p>
+        <strong>Score Breakdown:</strong><br>
+        Social Interaction: {{ score_groups['Social'] }}<br>
+        Repetitive Behavior & Patterns: {{ score_groups['Pattern'] }}<br>
+        Emotional Reactivity: {{ score_groups['Emotional'] }}
+      </p>
+      <p>
+        Your average score per question is <strong>{{ average_score|round(2) }}</strong>,
+        indicating a response pattern intensity of <strong>{{ intensity|round(2) }}%</strong>.
+      </p>
+      <p>
+        The radar and bar charts above reflect your response pattern across the ten assessment categories.
+        A higher score in specific areas may indicate certain behavioral tendencies related to autism.
+      </p>
+      <p>
+        The line chart shows your scoring trend, helping to understand any fluctuation in behavior indicators.
+        The polar chart provides a comparative intensity view of each response, while the doughnut chart visualizes model confidence.
+      </p>
+      <p>
+        <strong>Note:</strong> This tool is not a diagnostic tool. If you're unsure or curious about the result,
+        we recommend consulting a licensed healthcare professional for further evaluation.
+      </p>
+    </div>
+
+    <!-- Back Button -->
+    <a href="/" class="back">⟵ Predict Again</a>
+  </div>
+
+  <!-- ChartJS Scripts -->
+  <script>
+    const userScores = {{ scores | tojson }};
+    const questions = ["A1", "A2", "A3", "A4", "A5", "A6", "A7", "A8", "A9", "A10"];
+    const confidenceScore = parseFloat("{{ confidence }}");
+
+    new Chart(document.getElementById('gaugeChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Risk Intensity', 'Remaining'],
+        datasets: [{
+          data: [parseFloat("{{ intensity }}"), 100 - parseFloat("{{ intensity }}")],
+          backgroundColor: ['#dc3545', '#e0e0e0'],
+          borderWidth: 0
+        }]
+      },
+      options: {
+        plugins: {
+          title: {
+            display: true,
+            text: 'Overall Risk Intensity (%)',
+            font: { size: 16 }
+          },
+          tooltip: { enabled: false },
+          legend: { display: false }
+        },
+        cutout: '80%',
+        rotation: -90,
+        circumference: 180
+      }
+    });
+
+    new Chart(document.getElementById('radarChart'), {
+      type: 'radar',
+      data: {
+        labels: questions,
+        datasets: [{
+          label: 'User Response Pattern',
+          data: userScores,
+          backgroundColor: 'rgba(54, 162, 235, 0.2)',
+          borderColor: '#007BFF',
+          pointBackgroundColor: '#007BFF',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: 'A1–A10 Radar Analysis',
+            font: { size: 16 }
+          }
+        },
+        scales: {
+          r: {
+            min: 0,
+            max: 1,
+            ticks: { stepSize: 1 }
+          }
+        }
+      }
+    });
+
+    new Chart(document.getElementById('barChart'), {
+      type: 'bar',
+      data: {
+        labels: questions,
+        datasets: [{
+          label: 'Score per Question',
+          data: userScores,
+          backgroundColor: '#0d6efd',
+          borderRadius: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Individual Scores Overview',
+            font: { size: 16 }
+          }
+        },
+        scales: {
+          y: {
+            min: 0,
+            max: 1,
+            ticks: { stepSize: 1 }
+          }
+        }
+      }
+    });
+
+    new Chart(document.getElementById('confidencePie'), {
+      type: 'doughnut',
+      data: {
+        labels: ['Confidence', 'Uncertainty'],
+        datasets: [{
+          data: [confidenceScore, 100 - confidenceScore],
+          backgroundColor: ['#198754', '#e9ecef']
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Prediction Confidence Score',
+            font: { size: 16 }
+          },
+          legend: { position: 'bottom' }
+        },
+        cutout: '70%'
+      }
+    });
+
+    new Chart(document.getElementById('lineChart'), {
+      type: 'line',
+      data: {
+        labels: questions,
+        datasets: [{
+          label: 'Response Trend',
+          data: userScores,
+          fill: true,
+          borderColor: '#6610f2',
+          backgroundColor: 'rgba(102, 16, 242, 0.1)',
+          tension: 0.3,
+          pointRadius: 4
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Response Trend Line',
+            font: { size: 16 }
+          }
+        },
+        scales: {
+          y: {
+            min: 0,
+            max: 1,
+            ticks: { stepSize: 1 }
+          }
+        }
+      }
+    });
+
+    new Chart(document.getElementById('polarChart'), {
+      type: 'polarArea',
+      data: {
+        labels: questions,
+        datasets: [{
+          label: 'Response Weight',
+          data: userScores,
+          backgroundColor: [
+            '#0dcaf0', '#6610f2', '#198754', '#ffc107',
+            '#dc3545', '#6f42c1', '#20c997', '#fd7e14',
+            '#0d6efd', '#adb5bd'
+          ]
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: {
+          title: {
+            display: true,
+            text: 'Polar Response Intensity',
+            font: { size: 16 }
+          }
+        }
+      }
+    });
+
+    const scoreGroups = {{ score_groups | tojson }};
+    new Chart(document.getElementById('categoryBarChart'), {
+      type: 'bar',
+      data: {
+        labels: Object.keys(scoreGroups),
+        datasets: [{
+          label: 'Score',
+          data: Object.values(scoreGroups),
+          backgroundColor: ['#0dcaf0', '#20c997', '#ffc107'],
+          borderRadius: 6
+        }]
+      },
+      options: {
+        plugins: {
+          title: {
+            display: true,
+            text: 'Score Distribution by Category',
+            font: { size: 16 }
+          }
+        },
+        scales: {
+          y: {
+            beginAtZero: true,
+            max: 5
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

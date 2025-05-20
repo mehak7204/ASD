@@ -1,0 +1,12 @@
+# Ignore system files and directories
+*.log
+*.zip
+.DS_Store
+Thumbs.db
+
+# Ignore directories that are not part of the project
+Application Data/
+Cookies/
+Documents/
+
+
